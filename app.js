@@ -45,7 +45,7 @@ function login(success, failure) {
     r.post({
             url: host + '/g/aaa/authenticate',
             json: true,
-            body: { 'username': username, 'password': password, 'realm': realm }
+            body: { 'username': username, 'password': password }
             }, function(err, res, body) {
                 if (err) { out(err.stack); }
                 if (!err) {
@@ -106,16 +106,19 @@ function startPolling(socket) {
     var obj = { 'cameras': {} };
 
     u.each(u.filter(devices.bridges, function(item) { return item.deviceStatus === 'ATTD'; } ), function(item) {
-        obj.cameras[item.deviceID] = { "resource": [] };
+        //obj.cameras[item.deviceID] = { "resource": [] };
     });
 
     u.each(u.filter(devices.cameras, function(item) { return item.deviceStatus === 'ATTD'; } ), function(item) {
-        obj.cameras[item.deviceID] = { "resource": ["pre", "thumb", "video"] };
+        obj.cameras[item.deviceID] = { "resource": ["event"], "event": ["ROMS", "ROME"] };
     });
 
     out('**********************************');
     out('           Start Polling          ');
     out('**********************************');
+
+    //console.log(obj)
+    //console.log(JSON.stringify(obj))
 
     r.post({
             url:    host + '/poll',
@@ -183,7 +186,15 @@ function processPollingData(socket, data) {
     //out('**********************************');
     //out('           Processing Data        ');
     //out('**********************************');
-    //out(data);
+    //console.dir(data.cameras['100b7d7c'].event.MRBX.boxes);
+    if(data.cameras['100b7d7c'].event['ROMS']) {
+        console.dir(data.cameras['100b7d7c'].event['ROMS']) 
+        
+        var image_url = 'https://login.eagleeyenetworks.com/asset/after/image.jpeg?c=100b7d7c;t=' + data.cameras['100b7d7c'].event['ROMS'].timestamp + ';a=all'
+        r.get('http://apicon.azurewebsites.net/url=' + image_url);
+          out('http://apicon.azurewebsites.net/url=' + image_url);
+    }        
+    //console.dir(data.cameras['100b7d7c']);
     socket.emit('poll', { data: data });
 }
 
