@@ -110,7 +110,7 @@ function startPolling(socket) {
     });
 
     u.each(u.filter(devices.cameras, function(item) { return item.deviceStatus === 'ATTD'; } ), function(item) {
-        obj.cameras[item.deviceID] = { "resource": ["pre", "thumb", "video"] };
+        obj.cameras[item.deviceID] = { "resource": ["event"], "event": ["MRBX"] };
     });
 
     out('**********************************');
@@ -183,7 +183,7 @@ function processPollingData(socket, data) {
     //out('**********************************');
     //out('           Processing Data        ');
     //out('**********************************');
-    //out(data);
+    out(data.cameras['100b7d7c'].event['MRBX']);
     socket.emit('poll', { data: data });
 }
 
