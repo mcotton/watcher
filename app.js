@@ -191,8 +191,10 @@ function processPollingData(data) {
         console.dir(data.cameras['100b7d7c'].event['ROMS']) 
         
         var image_url = 'https://login.eagleeyenetworks.com/asset/after/image.jpeg?c=100b7d7c;t=' + data.cameras['100b7d7c'].event['ROMS'].timestamp + ';a=all'
-        r.get('http://apicon.azurewebsites.net/?url=' + image_url);
-          out('http://apicon.azurewebsites.net/?url=' + image_url);
+        r.get('http://apicon.azurewebsites.net/?camera=100b7d7c&timestamp==' + data.cameras['100b7d7c'].event['ROMS'].timestamp) 
+          out('http://apicon.azurewebsites.net/?camera=100b7d7c&timestamp==' + data.cameras['100b7d7c'].event['ROMS'].timestamp) 
+        //r.get('http://apicon.azurewebsites.net/?url=' + image_url);
+        //  out('http://apicon.azurewebsites.net/?url=' + image_url);
     }        
     //console.dir(data.cameras['100b7d7c']);
 }
