@@ -102,7 +102,7 @@ function getDevices(success, failure) {
     });
 }
 
-function startPolling(socket) {
+function startPolling() {
     var obj = { 'cameras': {} };
 
     u.each(u.filter(devices.bridges, function(item) { return item.deviceStatus === 'ATTD'; } ), function(item) {
@@ -130,7 +130,7 @@ function startPolling(socket) {
                     switch(res.statusCode) {
                         case 200:
                         case 503:
-                            keepPolling(socket);
+                            keepPolling();
                             break;
                          default:
                             out(res.statusCode);
@@ -147,7 +147,7 @@ function startPolling(socket) {
 
 }
 
-function keepPolling(socket) {
+function keepPolling() {
     //out('**********************************');
     //out('           Keep Polling           ');
     //out('**********************************');
@@ -161,8 +161,8 @@ function keepPolling(socket) {
                     switch(res.statusCode) {
                         case 200:
                             // got a valid polling cookie
-                            processPollingData(socket, res.body);
-                            keepPolling(socket);
+                            processPollingData(res.body);
+                            keepPolling();
                             break;
                         case 400:
                             // got an invalid polling cookie
@@ -173,7 +173,7 @@ function keepPolling(socket) {
                             out('**********************************');
                             out('           Restart Polling        ');
                             out('**********************************');
-                            startPolling(socket);
+                            startPolling();
                             break;
                     }
                 }
@@ -182,7 +182,7 @@ function keepPolling(socket) {
 
 }
 
-function processPollingData(socket, data) {
+function processPollingData(data) {
     //out('**********************************');
     //out('           Processing Data        ');
     //out('**********************************');
@@ -195,16 +195,12 @@ function processPollingData(socket, data) {
           out('http://apicon.azurewebsites.net/?url=' + image_url);
     }        
     //console.dir(data.cameras['100b7d7c']);
-    socket.emit('poll', { data: data });
 }
 
 
-io.sockets.on('connection', function (socket) {
+io.sockets.on('connection', function () {
 
-    // tell the client what there id is
-    socket.send(socket.id);
-    out('Client\'s socket id is: ' + socket.id);
-
+/*
     startUp( function() {
         login( function() {
             getDevices(function() {
@@ -216,10 +212,10 @@ io.sockets.on('connection', function (socket) {
             console.log('Failed to login using these credentials  ' + username + ' : ' + password );
         });
     });
+*/
 });
 
-io.sockets.on('disconnect', function(socket) {
-    out('socket disconnected', socket);
+io.sockets.on('disconnect', function() {
 });
 
 route.get('/image/{device}/{ts}', function(orig_req, orig_res) {
@@ -298,4 +294,18 @@ process.on('uncaughtException', function(err) {
         out(err);
         break;
   }
+});
+
+
+
+startUp( function() {
+    login( function() {
+        getDevices(function() {
+            startPolling()
+        });
+    },
+    // failure case for login
+    function() {
+        console.log('Failed to login using these credentials  ' + username + ' : ' + password );
+    });
 });
