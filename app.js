@@ -13,8 +13,9 @@ var app         =       require('http').createServer(route),
 
 
 var  out        =       console.log,
-     username   =       require('./config').username || 'username',
-     password   =       require('./config').password || 'password',
+     config     =       require('./config')
+     username   =       config.username || 'username',
+     password   =       config.password || 'password',
      realm      =       'eagleeyenetworks',
      host       =       'https://eagleeyenetworks.com';
 
@@ -105,20 +106,14 @@ function getDevices(success, failure) {
 function startPolling() {
     var obj = { 'cameras': {} };
 
-    u.each(u.filter(devices.bridges, function(item) { return item.deviceStatus === 'ATTD'; } ), function(item) {
-        //obj.cameras[item.deviceID] = { "resource": [] };
-    });
-
-    u.each(u.filter(devices.cameras, function(item) { return item.deviceStatus === 'ATTD'; } ), function(item) {
-        obj.cameras[item.deviceID] = { "resource": ["event"], "event": ["ROMS", "ROME"] };
-    });
+    obj.cameras['100fc5ce'] = { "resource": ["event"], "event": ["ROMS", "ROME"] };
 
     out('**********************************');
     out('           Start Polling          ');
     out('**********************************');
 
-    //console.log(obj)
-    //console.log(JSON.stringify(obj))
+    console.log(obj)
+    console.log(JSON.stringify(obj))
 
     r.post({
             url:    host + '/poll',
@@ -187,12 +182,29 @@ function processPollingData(data) {
     //out('           Processing Data        ');
     //out('**********************************');
     //console.dir(data.cameras['100b7d7c'].event.MRBX.boxes);
-    if(data.cameras['100b7d7c'].event['ROMS']) {
-        console.dir(data.cameras['100b7d7c'].event['ROMS']) 
+    if(data.cameras['100fc5ce'].event['ROMS']) {
+        console.dir(data.cameras['100fc5ce'].event['ROMS']) 
+        var details = data.cameras['100fc5ce'].event['ROMS']
         
-        var image_url = 'https://login.eagleeyenetworks.com/asset/after/image.jpeg?c=100b7d7c;t=' + data.cameras['100b7d7c'].event['ROMS'].timestamp + ';a=all'
-        r.get('http://apicon.azurewebsites.net/?camera=100b7d7c&timestamp==' + data.cameras['100b7d7c'].event['ROMS'].timestamp) 
-          out('http://apicon.azurewebsites.net/?camera=100b7d7c&timestamp==' + data.cameras['100b7d7c'].event['ROMS'].timestamp) 
+        r.post('https://www.appnotifications.com/account/notifications.json', 
+            { 'form':
+                {
+                    'user_credentials': config.faast_api_token,
+                    'notification[message]': 'Back Door Motion at ' + details.timestamp,
+                    'notification[title]': 'Back Door Motion',
+                    'notification[subtitle]': 'webhooks API example',
+                    'notification[long_message_preview]': 'test notification',
+                    'notification[long_message]': 'test notification',
+                    'notification[icon_url]': 'http://faast.io/img/icon.png',
+                    'notification[sound]': '50'
+                }
+            },
+            function(err, res) {
+                if(err) out('ERROR:', err)
+                out(res.statusCode)
+            }
+            ) 
+          out('https://www.appnotifications.com/account/notifications.json') 
         //r.get('http://apicon.azurewebsites.net/?url=' + image_url);
         //  out('http://apicon.azurewebsites.net/?url=' + image_url);
     }        
