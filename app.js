@@ -13,7 +13,7 @@ var app         =       require('http').createServer(route),
 
 
 var  out        =       console.log,
-     config     =       require('./config')
+     config     =       require('./config'),
      username   =       config.username || 'username',
      password   =       config.password || 'password',
      realm      =       'eagleeyenetworks',
@@ -106,7 +106,7 @@ function getDevices(success, failure) {
 function startPolling() {
     var obj = { 'cameras': {} };
 
-    obj.cameras['100fc5ce'] = { "resource": ["event"], "event": ["ROMS", "ROME"] };
+    obj.cameras[config.camera] = { "resource": ["event"], "event": ["ROMS", "ROME"] };
 
     out('**********************************');
     out('           Start Polling          ');
@@ -181,11 +181,10 @@ function processPollingData(data) {
     //out('**********************************');
     //out('           Processing Data        ');
     //out('**********************************');
-    //console.dir(data.cameras['100b7d7c'].event.MRBX.boxes);
-    if(data.cameras['100fc5ce'].event['ROMS']) {
-        console.dir(data.cameras['100fc5ce'].event['ROMS']) 
-        var details = data.cameras['100fc5ce'].event['ROMS']
-        
+    if(data.cameras[config.camera].event['ROMS']) {
+        console.dir(data.cameras[config.camera].event['ROMS']) 
+        var details = data.cameras[config.camera].event['ROMS']
+        out(config.faast_api_token) 
         r.post('https://www.appnotifications.com/account/notifications.json', 
             { 'form':
                 {
