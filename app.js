@@ -246,7 +246,7 @@ route.get('/jquery.preview.js', function(req, res) {
   });
 });
 
-route.get('/page.html', function(req, res) {
+route.get('/:device', function(req, res) {
   fs.readFile(__dirname + '/page.html',
   function (err, data) {
     if (err) {

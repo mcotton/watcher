@@ -1,12 +1,6 @@
 <html>
 <head>
     <title>connecting...</title>
-    <style>
-        img {
-            width: 320px;
-            height: 180px;
-        }
-    </style>
 </head>
 <body>
 
@@ -16,6 +10,8 @@
 <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
+
+    var curr_device = window.location.pathname.replace('/','')
   
     //cache jQuery objects so we can reduce lookups
     var img_holders = {}; 
@@ -39,14 +35,16 @@
 
     socket.on('poll', function (data) {
         for (var device in data.data.cameras) {
-            if(data.data.cameras[device].pre) {
-                if(!img_holders[device]) {
-                    $('body').append('<a href="/' + device + '"><img id="img_' + device + '"></a>');
-                    img_holders[device] = $('#img_' + device);
+            if(device == curr_device) {
+                if(data.data.cameras[device].pre) {
+                    if(!img_holders[device]) {
+                        $('body').append('<a href="/' + device + '"><img id="img_' + device + '"></a>');
+                        img_holders[device] = $('#img_' + device);
+                    }
+                    console.log('fetching preview')
+                    img_holders[device].attr('src', '/image/' + device + '/' + data.data.cameras[device].pre );
                 }
-                console.log('fetching preview')
-                img_holders[device].attr('src', '/image/' + device + '/' + data.data.cameras[device].pre );
-            } 
+            }
         }
     });
 </script>
