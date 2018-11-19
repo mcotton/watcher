@@ -126,6 +126,7 @@ function startPolling(socket) {
                 if (!err) {
                     switch(res.statusCode) {
                         case 200:
+                        case 502:
                         case 503:
                             keepPolling(socket);
                             break;
@@ -288,3 +289,11 @@ process.on('uncaughtException', function(err) {
         break;
   }
 });
+
+process.on('SIGTERM', function () {
+  server.close(function () {
+    process.exit(0);
+  });
+});
+
+
