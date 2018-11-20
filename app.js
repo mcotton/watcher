@@ -162,12 +162,12 @@ function keepPolling(socket) {
                             processPollingData(socket, res.body);
                             keepPolling(socket);
                             break;
-                        case 400:
-                            // got an invalid polling cookie
-                            //debug({ 'res': res, 'socket': socket });
+                        case 502:
+                        case 503:
+                            keepPolling(socket);
                             break;
                         default:
-                            out(res.statusCode);
+                            out(res.statusCode + ' in keepPolling()');
                             out('**********************************');
                             out('           Restart Polling        ');
                             out('**********************************');

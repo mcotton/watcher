@@ -18,7 +18,8 @@
 <script>
   
     //cache jQuery objects so we can reduce lookups
-    var img_holders = {}; 
+    var img_holders = {};
+    var camera_status = {};
 
     var socket = io.connect('', {
                 'reconnect':                    true,
@@ -44,8 +45,22 @@
                     $('body').append('<a href="/' + device + '"><img id="img_' + device + '"></a>');
                     img_holders[device] = $('#img_' + device);
                 }
-                console.log('fetching preview')
-                img_holders[device].attr('src', '/image/' + device + '/' + data.data.cameras[device].pre );
+                
+                if(!camera_status[device]) {
+                    camera_status[device] = { 'loading': false }
+                }
+
+                if(camera_status[device].loading == false) {
+                    console.log('fetching preview')
+                    img_holders[device].attr('src', '/image/' + device + '/' + data.data.cameras[device].pre );
+                    camera_status[device] = { 'loading': '/image/' + device + '/' + data.data.cameras[device].pre }
+                    img_holders[device].on('load', function() {
+                        camera_status[device] = {'loading': false }
+                    })
+                } else {
+                    console.log('already loading a preview, skip loading')
+                }
+
             } 
         }
     });
