@@ -47,12 +47,12 @@ function login(success, failure) {
             json: true,
             body: { 'username': username, 'password': password, 'realm': realm }
             }, function(err, res, body) {
-                if (err) { out(err.stack); }
+                if (err) { out("error in login1"); out(err.stack); }
                 if (!err) {
                     switch(res.statusCode) {
                         case 200:
                             r.post({ url: host + '/g/aaa/authorize', json: true, body: { token: res.body.token } }, function(err, res, body) {
-                               if (err) { out(err.stack); }
+                               if (err) { out("error in login2"); out(err.stack); }
                                if (!err && res.statusCode == 200) {
                                     out('**********************************');
                                     out('           Logged in              ');
@@ -74,7 +74,7 @@ function login(success, failure) {
 
 function getDevices(success, failure) {
     r.get({url: host + '/g/list/devices', json: true }, function(err, res, body) {
-        if (err) { out(err.stack) }
+        if (err) { out("error in getDevices"); out(err.stack) }
         if (!err && res.statusCode == 200) {
             out('**********************************');
             out('           Grabbed Devices        ');
@@ -122,7 +122,7 @@ function startPolling(socket) {
             json:   true,
             body:   JSON.stringify( obj)
            }, function(err, res, body) {
-                if (err) { out(err.stack) };
+                if (err) { out("error in startPolling"); out(err.stack) };
                 if (!err) {
                     switch(res.statusCode) {
                         case 200:
@@ -154,7 +154,7 @@ function keepPolling(socket) {
             url:    host + '/poll',
             json:   true,
            }, function(err, res, body) {
-                if (err) { out(err.stack) };
+                if (err) { out("error in keepPolling"); out(err.stack); socket.disconnect()};
                 if (!err) {
                     switch(res.statusCode) {
                         case 200:
@@ -185,9 +185,15 @@ function processPollingData(socket, data) {
     //out('           Processing Data        ');
     //out('**********************************');
     //out(data);
-    socket.emit('poll', { data: data });
+    if(socket) {
+        socket.emit('poll', { data: data });
+    }
 }
 
+
+app.on('error', function(e) {
+    console.log(e)
+});
 
 io.sockets.on('connection', function (socket) {
 
