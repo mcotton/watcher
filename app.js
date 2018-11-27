@@ -13,10 +13,8 @@ var app         =       require('http').createServer(route),
 
 
 var  out        =       console.log,
-     username   =       require('./config').username || 'username',
-     password   =       require('./config').password || 'password',
-     realm      =       'eagleeyenetworks',
-     host       =       'https://eagleeyenetworks.com';
+     config     =       require('./config'),
+     host       =       'https://login.eagleeyenetworks.com';
 
 var user        =       {},
     devices     =       {
@@ -45,7 +43,7 @@ function login(success, failure) {
     r.post({
             url: host + '/g/aaa/authenticate',
             json: true,
-            body: { 'username': username, 'password': password, 'realm': realm }
+            body: { 'username': config.username, 'password': config.password, 'realm': 'eagleeyenetworks' }
             }, function(err, res, body) {
                 if (err) { out("error in login1"); out(err.stack); }
                 if (!err) {
@@ -105,12 +103,18 @@ function getDevices(success, failure) {
 function startPolling(socket) {
     var obj = { 'cameras': {} };
 
-    u.each(u.filter(devices.bridges, function(item) { return item.deviceStatus === 'ATTD'; } ), function(item) {
-        obj.cameras[item.deviceID] = { "resource": [] };
-    });
+    // u.each(u.filter(devices.bridges, function(item) { return item.deviceStatus === 'ATTD'; } ), function(item) {
+    //     obj.cameras[item.deviceID] = { "resource": [] };
+    // });
 
-    u.each(u.filter(devices.cameras, function(item) { return item.deviceStatus === 'ATTD'; } ), function(item) {
-        obj.cameras[item.deviceID] = { "resource": ["pre", "thumb", "video"] };
+    var cameras_to_poll = devices.cameras
+
+    if(config.filter_cameras.length > 0) {
+        cameras_to_poll = u.filter(devices.cameras, function(item) { return config.filter_cameras.indexOf(item.deviceID) > -1 })
+    }
+
+    u.each(u.filter(cameras_to_poll, function(item) { return item.deviceStatus === 'ATTD' } ), function(item) {
+        obj.cameras[item.deviceID] = { "resource": ["pre"] };
     });
 
     out('**********************************');
