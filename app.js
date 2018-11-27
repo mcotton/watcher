@@ -122,7 +122,7 @@ function startPolling(socket) {
             json:   true,
             body:   JSON.stringify( obj)
            }, function(err, res, body) {
-                if (err) { out("error in startPolling"); out(err.stack) };
+                if (err) { out("error in startPolling"); out(err.stack); startPolling(socket) };
                 if (!err) {
                     switch(res.statusCode) {
                         case 200:
@@ -135,7 +135,7 @@ function startPolling(socket) {
                             out('**********************************');
                             out('           Restart Polling        ');
                             out('**********************************');
-                            startPolling();
+                            startPolling(socket);
                             break;
                     }
                 }
@@ -154,7 +154,7 @@ function keepPolling(socket) {
             url:    host + '/poll',
             json:   true,
            }, function(err, res, body) {
-                if (err) { out("error in keepPolling"); out(err.stack); socket.disconnect()};
+                if (err) { out("error in keepPolling"); out(err.stack); keepPolling(socket);};
                 if (!err) {
                     switch(res.statusCode) {
                         case 200:
@@ -191,12 +191,7 @@ function processPollingData(socket, data) {
 }
 
 
-app.on('error', function(e) {
-    console.log(e)
-});
-
-io.sockets.on('connection', function (socket) {
-
+function bootstrap(socket) {
     // tell the client what there id is
     socket.send(socket.id);
     out('Client\'s socket id is: ' + socket.id);
@@ -212,6 +207,15 @@ io.sockets.on('connection', function (socket) {
             console.log('Failed to login using these credentials  ' + username + ' : ' + password );
         });
     });
+}
+
+
+app.on('error', function(e) {
+    console.log(e)
+});
+
+io.sockets.on('connection', function (socket) {
+    bootstrap(socket);
 });
 
 io.sockets.on('disconnect', function(socket) {
