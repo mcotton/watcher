@@ -36,38 +36,57 @@ function startUp(success, failure) {
     out('**********************************');
     out('           Starting up            ');
     out('**********************************');
-    if ( typeof success === 'function') success(); // call success callback
+    if ( typeof success === 'function') success(); // call success callback   
 }
 
 function login(success, failure) {
-    r.post({
-            url: host + '/g/aaa/authenticate',
-            json: true,
-            body: { 'username': config.username, 'password': config.password, 'realm': 'eagleeyenetworks' }
-            }, function(err, res, body) {
-                if (err) { out("error in login1"); out(err.stack); }
-                if (!err) {
-                    switch(res.statusCode) {
-                        case 200:
-                            r.post({ url: host + '/g/aaa/authorize', json: true, body: { token: res.body.token } }, function(err, res, body) {
-                               if (err) { out("error in login2"); out(err.stack); }
-                               if (!err && res.statusCode == 200) {
-                                    out('**********************************');
-                                    out('           Logged in              ');
-                                    out('**********************************');
-                                    user = res.body;
-                                    if ( typeof success === 'function') success(); // call success callback
+    r.get({
+            url: host + '/g/aaa/isauth'
+        }, function(err, res, body) {
+            if (err) { 
+                out("error in pre-login");
+                out(err.stack);
+                if ( typeof failure === 'function') failure(); 
+            }
+            if (!err) {
+                switch(res.statusCode) {
+                    case 200:
+                        out('*********** Auth is still good ***************');
+                        if ( typeof success === 'function') success();
+                        break;
+                    default:
+                        r.post({
+                            url: host + '/g/aaa/authenticate',
+                            json: true,
+                            body: { 'username': config.username, 'password': config.password, 'realm': 'eagleeyenetworks' }
+                            }, function(err, res, body) {
+                                if (err) { out("error in login1"); out(err.stack); }
+                                if (!err) {
+                                    switch(res.statusCode) {
+                                        case 200:
+                                            r.post({ url: host + '/g/aaa/authorize', json: true, body: { token: res.body.token } }, function(err, res, body) {
+                                               if (err) { out("error in login2"); out(err.stack); }
+                                               if (!err && res.statusCode == 200) {
+                                                    out('**********************************');
+                                                    out('           Logged in              ');
+                                                    out('**********************************');
+                                                    user = res.body;
+                                                    if ( typeof success === 'function') success(); // call success callback
+                                                }
+                                            })
+                                            break;
+                                        default:
+                                            out(res.statusCode + ': ' +  res.body);
+                                            if ( typeof failure === 'function') failure(); // call failure callback
+
+                                    }
                                 }
-                            })
-                            break;
-                        default:
-                            out(res.statusCode + ': ' +  res.body);
-                            if ( typeof failure === 'function') failure(); // call failure callback
+                    })
 
-                    }
                 }
-    })
 
+            }
+    })
 }
 
 function getDevices(success, failure) {
