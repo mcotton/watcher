@@ -57,6 +57,8 @@
     //cache jQuery objects so we can reduce lookups
     var img_holders = {}; 
 
+    var socket_id = "not_connected";
+
     var socket = io.connect('', {
                 'reconnect':                    true,
                 'reconnection delay':           1000,
@@ -64,12 +66,14 @@
             });
 
     
-    socket.on('connect', function() { 
+    socket.on('connect', function() {
+        socket_id = socket.socket.sessionid;
         console.log('connected :) '); 
         document.title = 'connected :)' 
     });
 
-    socket.on('disconnect', function() { 
+    socket.on('disconnect', function() {
+        socket_id = 'disconnected'; 
         console.log('disconnected :( '); 
         document.title = 'disconnected :(' 
 
@@ -98,7 +102,7 @@
     function update_camera(camera_id, data) {
         console.log('fetching preview')
         curr_device_loading = true
-        $('#preview_image').attr('src', '/image/' + camera_id + '/' + data.pre );
+        $('#preview_image').attr('src', '/image/' + camera_id + '/' + data.pre  + '?socket_id=' + socket_id);
         $('#preview_image').on('load', function() {
             $('#timestamp').text(data.pre)
             $('#preview_log').prepend(`<li>${data.pre}</li>`)

@@ -30,18 +30,19 @@ var debug = function(arg) {
     }).context.arg = arg;
 };
 
+var cookie_jars = {}
 
-
-function startUp(success, failure) {
+function startUp(socket, success, failure) {
     out('**********************************');
     out('           Starting up            ');
     out('**********************************');
     if ( typeof success === 'function') success(); // call success callback   
 }
 
-function login(success, failure) {
+function login(socket, success, failure) {
     r.get({
-            url: host + '/g/aaa/isauth'
+            url: host + '/g/aaa/isauth',
+            jar: cookie_jars[socket.id]
         }, function(err, res, body) {
             if (err) { 
                 out("error in pre-login");
@@ -64,7 +65,10 @@ function login(success, failure) {
                                 if (!err) {
                                     switch(res.statusCode) {
                                         case 200:
-                                            r.post({ url: host + '/g/aaa/authorize', json: true, body: { token: res.body.token } }, function(err, res, body) {
+                                            r.post({ url: host + '/g/aaa/authorize',
+                                                    jar: cookie_jars[socket.id],
+                                                    json: true, body: { token: res.body.token }
+                                                }, function(err, res, body) {
                                                if (err) { out("error in login2"); out(err.stack); }
                                                if (!err && res.statusCode == 200) {
                                                     out('**********************************');
@@ -89,8 +93,11 @@ function login(success, failure) {
     })
 }
 
-function getDevices(success, failure) {
-    r.get({url: host + '/g/list/devices', json: true }, function(err, res, body) {
+function getDevices(socket, success, failure) {
+    r.get({ url: host + '/g/list/devices',
+            json: true,
+            jar: cookie_jars[socket.id]
+        }, function(err, res, body) {
         if (err) { out("error in getDevices"); out(err.stack) }
         if (!err && res.statusCode == 200) {
             out('**********************************');
@@ -142,6 +149,7 @@ function startPolling(socket) {
 
     r.post({
             url:    host + '/poll',
+            jar: cookie_jars[socket.id],
             json:   true,
             body:   JSON.stringify( obj)
            }, function(err, res, body) {
@@ -175,6 +183,7 @@ function keepPolling(socket) {
 
     r.get({
             url:    host + '/poll',
+            jar: cookie_jars[socket.id],
             json:   true,
            }, function(err, res, body) {
                 if (err) { out("error in keepPolling"); out(err.stack); keepPolling(socket);};
@@ -184,6 +193,14 @@ function keepPolling(socket) {
                             // got a valid polling cookie
                             processPollingData(socket, res.body);
                             keepPolling(socket);
+                            break;
+                        case 400:
+                            out(res.statusCode + ' in keepPolling');
+                            out(res.headers);
+                            out('**********************************');
+                            out('           Restart Polling        ');
+                            out('**********************************');
+                            startPolling(socket);
                             break;
                         case 502:
                         case 503:
@@ -215,14 +232,17 @@ function processPollingData(socket, data) {
 
 
 function bootstrap(socket) {
-    // tell the client what there id is
+    // tell the client what their id is
     socket.send(socket.id);
     out('Client\'s socket id is: ' + socket.id);
 
-    startUp( function() {
-        login( function() {
-            getDevices(function() {
+    startUp( socket, function() {
+        login( socket, function() {
+            getDevices(socket, function() {
                 startPolling(socket)
+            },
+            function() {
+                console.log('Failure case for getDevices()');
             });
         },
         // failure case for login
@@ -238,7 +258,13 @@ app.on('error', function(e) {
 });
 
 io.sockets.on('connection', function (socket) {
-    bootstrap(socket);
+    var _socket = socket
+
+    if(!(socket.id in cookie_jars)) {
+        cookie_jars[socket.id] = r.jar();
+    }
+
+    bootstrap(_socket);
 });
 
 io.sockets.on('disconnect', function(socket) {
@@ -248,6 +274,7 @@ io.sockets.on('disconnect', function(socket) {
 route.get('/image/{device}/{ts}', function(orig_req, orig_res) {
     var ts      =   orig_req.params.ts,
         device  =   orig_req.params.device;
+        socket_id = orig_req.params.socket_id;
 
     //console.log('DEBUG: matching /image/' + device + '/' + ts);
 
@@ -255,8 +282,12 @@ route.get('/image/{device}/{ts}', function(orig_req, orig_res) {
 
     var url = host + '/asset/prev/image.jpeg?c=' + device + ';t=' + ts + ';q=high;a=pre';
 
+    socket_id = orig_req.url.match(/socket_id=(\S*)(\&*)/)[1]
+
     try {
-        r.get(url).pipe(orig_res)
+        r.get({ url: url,
+                jar: cookie_jars[socket_id]
+            }).pipe(orig_res)
     } catch(e) {
         out('error in fetching images: ', e)
     }
