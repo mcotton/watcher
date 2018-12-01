@@ -157,6 +157,9 @@ function startPolling(socket) {
                 if (!err) {
                     switch(res.statusCode) {
                         case 200:
+                            processPollingData(socket, res.body);
+                            keepPolling(socket);
+                            break;
                         case 502:
                         case 503:
                             keepPolling(socket);
