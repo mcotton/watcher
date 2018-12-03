@@ -48,7 +48,7 @@
 
 
 <script src="//code.jquery.com/jquery-1.9.1.min.js"></script>
-<script src="/socket.io/socket.io.js"></script>
+<script src="socket.io/socket.io.js"></script>
 <script>
 
      curr_device = window.location.pathname.replace('/','')
@@ -102,7 +102,7 @@
     function update_camera(camera_id, data) {
         console.log('fetching preview')
         curr_device_loading = true
-        $('#preview_image').attr('src', '/image/' + camera_id + '/' + data.pre  + '?socket_id=' + socket_id);
+        $('#preview_image').attr('src', '../image/' + camera_id + '/' + data.pre  + '?socket_id=' + socket_id);
         $('#preview_image').on('load', function() {
             $('#timestamp').text(data.pre)
             $('#preview_log').prepend(`<li>${data.pre}</li>`)
