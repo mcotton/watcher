@@ -20,7 +20,10 @@ var user        =       {},
     devices     =       {
                             cameras: [],
                             bridges: []
-                        };
+                        },
+    last_img    =       {};
+    cached_img  =       {};
+
 
 var debug = function(arg) {
     repl.start({
@@ -289,19 +292,56 @@ route.get('/image/{device}/{ts}', function(orig_req, orig_res) {
 
     //console.log('DEBUG: matching /image/' + device + '/' + ts);
 
-    ts = (ts.indexOf('now') >= -1) ? 'now' : ts;
+    // ts = (ts.indexOf('now') >= -1) ? 'now' : ts;
 
     var url = host + '/asset/prev/image.jpeg?c=' + device + ';t=' + ts + ';q=high;a=pre';
 
     socket_id = orig_req.url.match(/socket_id=(\S*)(\&*)/)[1]
 
-    try {
-        r.get({ url: url,
-                jar: cookie_jars[socket_id]
-            }).pipe(orig_res)
-    } catch(e) {
-        out('error in fetching images: ', e)
+    if (!(device in last_img)) {
+        last_img[device] = "0"
     }
+
+
+   // if(ts <= last_img[device]) {
+        // requested image is older
+        // send them the cached image
+        if(ts <= last_img[device]) {
+            orig_res.headers = {"content-type": "image/jpeg"};
+            orig_res.write(cached_img[device]);
+            orig_res.end();
+            out("Served image from cache!");
+            return;
+        } else {
+            out("fetching a new image for " + device);
+            last_img[device] = ts;
+        }
+
+    //} else {
+
+        var url = host + '/asset/prev/image.jpeg?c=' + device + ';t=' + ts + ';q=high;a=pre';
+
+        try {
+            r.get({ url: url,
+                    jar: cookie_jars[socket_id],
+                    encoding: null
+                }, function(err, res, body) {
+                    if (err) { out("error in GET /image/" + device + "/" + ts); out(err.stack);};
+                    if(!err && res.statusCode == 200) {                       
+                        cached_img[device] = new Buffer.alloc(parseInt(res.headers['content-length'], 10), body, 'base64');
+                        orig_res.headers = {"content-type": "image/jpeg"};
+                        orig_res.write(cached_img[device]);
+                        orig_res.end();
+                    }
+                    
+                })
+            //.pipe(orig_res);
+
+        } catch(e) {
+            out('error in fetching images: ', e)
+        }
+
+   // }
 
 });
 
