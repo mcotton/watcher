@@ -161,6 +161,9 @@ function startPolling(socket) {
                         case 503:
                             keepPolling(socket);
                             break;
+                        case 401:
+                            handle_401(socket);
+                            break;
                          default:
                             out(res.statusCode);
                             out('**********************************');
@@ -202,6 +205,9 @@ function keepPolling(socket) {
                             out('**********************************');
                             startPolling(socket);
                             break;
+                        case 401:
+                            handle_401(socket);
+                            break;
                         case 502:
                         case 503:
                             keepPolling(socket);
@@ -228,6 +234,11 @@ function processPollingData(socket, data) {
     if(socket) {
         socket.emit('poll', { data: data });
     }
+}
+
+function handle_401(socket) {
+    out("Got a 401, going to start the bootstrap process over again")
+    bootstrap(socket);
 }
 
 
