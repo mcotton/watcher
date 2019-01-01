@@ -160,8 +160,19 @@ function startPolling(socket) {
                 if (!err) {
                     switch(res.statusCode) {
                         case 200:
+                            keepPolling(socket);
+                            break;
+                        case 500:
+                            out(res.statusCode + ' in keepPolling()');
+                            out(res.headers);
+                            out(res.body);
+                            startPolling(socket);
+                            break;
                         case 502:
                         case 503:
+                            out(res.statusCode + ' in keepPolling()');
+                            out(res.headers);
+                            out(res.body);
                             keepPolling(socket);
                             break;
                         case 401:
@@ -169,6 +180,8 @@ function startPolling(socket) {
                             break;
                          default:
                             out(res.statusCode);
+                            out(res.headers);
+                            out(res.body);
                             out('**********************************');
                             out('           Restart Polling        ');
                             out('**********************************');
@@ -203,6 +216,7 @@ function keepPolling(socket) {
                         case 400:
                             out(res.statusCode + ' in keepPolling');
                             out(res.headers);
+                            out(res.body);
                             out('**********************************');
                             out('           Restart Polling        ');
                             out('**********************************');
@@ -211,12 +225,23 @@ function keepPolling(socket) {
                         case 401:
                             handle_401(socket);
                             break;
+                        case 500:
+                            out(res.statusCode + ' in keepPolling()');
+                            out(res.headers);
+                            out(res.body);
+                            startPolling(socket);
+                            break;
                         case 502:
                         case 503:
+                            out(res.statusCode + ' in keepPolling()');
+                            out(res.headers);
+                            out(res.body);
                             keepPolling(socket);
                             break;
                         default:
                             out(res.statusCode + ' in keepPolling()');
+                            out(res.headers);
+                            out(res.body);
                             out('**********************************');
                             out('           Restart Polling        ');
                             out('**********************************');
